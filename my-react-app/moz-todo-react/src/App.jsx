@@ -1,29 +1,20 @@
 import { useState } from "react";
 import "./App.css";
 
-function App(props) {
-  console.log(props);
+function App() {
   const [tasks, setTasks] = useState([
     { id: 0, text: "Eat", completed: true },
     { id: 1, text: "Sleep", completed: false },
     { id: 2, text: "Repeat", completed: false }
   ]);
-  const [newTaskText, setNewTaskText] = useState("");
 
-  const handleChange = (event) => {
-    setNewTaskText(event.target.value);
-  };
+  const [editTaskId, setEditTaskId] = useState(null);
+  const [editTaskText, setEditTaskText] = useState("");
+  const [filter, setFilter] = useState("all");
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (newTaskText.trim() !== "") {
-      const newTask = {
-        id: tasks.length,
-        text: newTaskText,
-        completed: false
-      };
-      setTasks([...tasks, newTask]);
-      setNewTaskText("");
+  const addTask = (text) => {
+    if (text.trim() !== "") {
+      setTasks([...tasks, { id: tasks.length, text, completed: false }]);
     }
   };
 
@@ -31,16 +22,39 @@ function App(props) {
     setTasks(tasks.filter(task => task.id !== taskId));
   };
 
-  const toggleCompletion = (taskId) => {
+  const editTask = (taskId, taskText) => {
+    setEditTaskId(taskId);
+    setEditTaskText(taskText);
+  };
+
+  const saveEdit = (taskId) => {
+    setTasks(tasks.map(task =>
+      task.id === taskId ? { ...task, text: editTaskText } : task
+    ));
+    setEditTaskId(null);
+    setEditTaskText("");
+  };
+
+  const toggleComplete = (taskId) => {
     setTasks(tasks.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
   };
 
+  const filteredTasks = tasks.filter(task => {
+    if (filter === "active") {
+      return !task.completed;
+    } else if (filter === "completed") {
+      return task.completed;
+    } else {
+      return true;
+    }
+  });
+
   return (
     <div className="todoapp stack-large">
       <h1>TodoMatic</h1>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => { e.preventDefault(); addTask(e.target.elements[0].value); e.target.reset(); }}>
         <h2 className="label-wrapper">
           <label htmlFor="new-todo-input" className="label__lg">
             What needs to be done?
@@ -52,45 +66,75 @@ function App(props) {
           className="input input__lg"
           name="text"
           autoComplete="off"
-          value={newTaskText}
-          onChange={handleChange}
         />
         <button type="submit" className="btn btn__primary btn__lg">
           Add
         </button>
       </form>
+      <div className="filters btn-group stack-exception">
+        <button type="button" className={`btn toggle-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter("all")}>
+          <span className="visually-hidden">Show </span>
+          <span>All</span>
+          <span className="visually-hidden"> tasks</span>
+        </button>
+        <button type="button" className={`btn toggle-btn ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter("active")}>
+          <span className="visually-hidden">Show </span>
+          <span>Active</span>
+          <span className="visually-hidden"> tasks</span>
+        </button>
+        <button type="button" className={`btn toggle-btn ${filter === 'completed' ? 'active' : ''}`} onClick={() => setFilter("completed")}>
+          <span className="visually-hidden">Show </span>
+          <span>Completed</span>
+          <span className="visually-hidden"> tasks</span>
+        </button>
+      </div>
+      <h2 id="list-heading">Tasks remaining: {tasks.filter(task => !task.completed).length}</h2>
       <ul
         role="list"
         className="todo-list stack-large stack-exception"
-      >
-        {tasks.map(task => (
+        aria-labelledby="list-heading">
+        {filteredTasks.map(task => (
           <li key={task.id} className="todo stack-small">
             <div className="c-cb">
               <input
                 id={`todo-${task.id}`}
                 type="checkbox"
-                checked={task.completed}
-                onChange={() => toggleCompletion(task.id)}
+                defaultChecked={task.completed}
+                onChange={() => toggleComplete(task.id)}
               />
               <label className="todo-label" htmlFor={`todo-${task.id}`}>
-                {task.text}
+                {editTaskId === task.id ? (
+                  <input
+                    type="text"
+                    value={editTaskText}
+                    onChange={(e) => setEditTaskText(e.target.value)}
+                  />
+                ) : (
+                  task.text
+                )}
               </label>
             </div>
             <div className="btn-group">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => console.log("Edit task:", task.id)}
-              >
-                Edit <span className="visually-hidden">{task.text}</span>
-              </button>
-              <button
-                type="button"
-                className="btn btn__danger"
-                onClick={() => deleteTask(task.id)}
-              >
-                Delete <span className="visually-hidden">{task.text}</span>
-              </button>
+              {editTaskId === task.id ? (
+                <>
+
+<button type="button" className="btn" onClick={() => saveEdit(task.id)}>
+                    Save
+                  </button>
+                  <button type="button" className="btn btn__danger" onClick={() => setEditTaskId(null)}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="btn" onClick={() => editTask(task.id, task.text)}>
+                    Edit
+                  </button>
+                  <button type="button" className="btn btn__danger" onClick={() => deleteTask(task.id)}>
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           </li>
         ))}
