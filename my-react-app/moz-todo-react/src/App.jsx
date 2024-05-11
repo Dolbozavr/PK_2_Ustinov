@@ -1,16 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 
 function App() {
-  const [tasks, setTasks] = useState([
-    { id: 0, text: "Eat", completed: true },
-    { id: 1, text: "Sleep", completed: false },
-    { id: 2, text: "Repeat", completed: false }
-  ]);
+  const [tasks, setTasks] = useState(() => {
+    const storedTasks = localStorage.getItem("tasks");
+    return storedTasks ? JSON.parse(storedTasks) : [
+      { id: 0, text: "Eat", completed: true },
+      { id: 1, text: "Sleep", completed: false },
+      { id: 2, text: "Repeat", completed: false }
+    ];
+  });
 
   const [editTaskId, setEditTaskId] = useState(null);
   const [editTaskText, setEditTaskText] = useState("");
   const [filter, setFilter] = useState("all");
+
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
 
   const addTask = (text) => {
     if (text.trim() !== "") {
