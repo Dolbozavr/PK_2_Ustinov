@@ -2,26 +2,26 @@ import { useState, useEffect } from "react";
 import "./App.css";
 
 function App() {
-  const [tasks, setTasks] = useState(() => {
-    const storedTasks = localStorage.getItem("tasks");
-    return storedTasks ? JSON.parse(storedTasks) : [
-      { id: 0, text: "Eat", completed: true },
-      { id: 1, text: "Sleep", completed: false },
-      { id: 2, text: "Repeat", completed: false }
-    ];
-  });
+  const [tasks, setTasks] = useState([]);
+
+  useEffect(() => {
+    // Здесь вы можете сделать ваш фетч запрос
+    fetch('https://jsonplaceholder.typicode.com/todos')
+      .then(response => response.json())
+      .then(data => {
+        // Устанавливаем полученные данные в состояние tasks
+        setTasks(data);
+      })
+      .catch(error => console.error('Error fetching tasks:', error));
+  }, []);
 
   const [editTaskId, setEditTaskId] = useState(null);
   const [editTaskText, setEditTaskText] = useState("");
   const [filter, setFilter] = useState("all");
 
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
-
   const addTask = (text) => {
     if (text.trim() !== "") {
-      setTasks([...tasks, { id: tasks.length, text, completed: false }]);
+      setTasks([{ id: tasks.length, title: text, completed: false }, ...tasks]);
     }
   };
 
@@ -36,7 +36,7 @@ function App() {
 
   const saveEdit = (taskId) => {
     setTasks(tasks.map(task =>
-      task.id === taskId ? { ...task, text: editTaskText } : task
+      task.id === taskId ? { ...task, title: editTaskText } : task
     ));
     setEditTaskId(null);
     setEditTaskText("");
@@ -60,11 +60,11 @@ function App() {
 
   return (
     <div className="todoapp stack-large">
-      <h1>TodoMatic</h1>
+      <h1>ТуДу'шка</h1>
       <form onSubmit={(e) => { e.preventDefault(); addTask(e.target.elements[0].value); e.target.reset(); }}>
         <h2 className="label-wrapper">
           <label htmlFor="new-todo-input" className="label__lg">
-            What needs to be done?
+            Что пользователи сделали
           </label>
         </h2>
         <input
@@ -75,27 +75,27 @@ function App() {
           autoComplete="off"
         />
         <button type="submit" className="btn btn__primary btn__lg">
-          Add
+          Добавить
         </button>
       </form>
       <div className="filters btn-group stack-exception">
         <button type="button" className={`btn toggle-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter("all")}>
           <span className="visually-hidden">Show </span>
-          <span>All</span>
+          <span>Все</span>
           <span className="visually-hidden"> tasks</span>
         </button>
         <button type="button" className={`btn toggle-btn ${filter === 'active' ? 'active' : ''}`} onClick={() => setFilter("active")}>
           <span className="visually-hidden">Show </span>
-          <span>Active</span>
+          <span>Активные</span>
           <span className="visually-hidden"> tasks</span>
         </button>
         <button type="button" className={`btn toggle-btn ${filter === 'completed' ? 'active' : ''}`} onClick={() => setFilter("completed")}>
           <span className="visually-hidden">Show </span>
-          <span>Completed</span>
+          <span>Выполненные</span>
           <span className="visually-hidden"> tasks</span>
         </button>
       </div>
-      <h2 id="list-heading">Tasks remaining: {tasks.filter(task => !task.completed).length}</h2>
+      <h2 id="list-heading">Невыполненные: {tasks.filter(task => !task.completed).length}</h2>
       <ul
         role="list"
         className="todo-list stack-large stack-exception"
@@ -117,28 +117,27 @@ function App() {
                     onChange={(e) => setEditTaskText(e.target.value)}
                   />
                 ) : (
-                  task.text
+                  task.title
                 )}
               </label>
             </div>
             <div className="btn-group">
               {editTaskId === task.id ? (
                 <>
-
-<button type="button" className="btn" onClick={() => saveEdit(task.id)}>
-                    Save
+                  <button type="button" className="btn" onClick={() => saveEdit(task.id)}>
+                    Сохранить
                   </button>
                   <button type="button" className="btn btn__danger" onClick={() => setEditTaskId(null)}>
-                    Cancel
+                    Отмена
                   </button>
                 </>
               ) : (
                 <>
-                  <button type="button" className="btn" onClick={() => editTask(task.id, task.text)}>
-                    Edit
+                  <button type="button" className="btn" onClick={() => editTask(task.id, task.title)}>
+                    Изменить
                   </button>
                   <button type="button" className="btn btn__danger" onClick={() => deleteTask(task.id)}>
-                    Delete
+                    Удалить
                   </button>
                 </>
               )}
