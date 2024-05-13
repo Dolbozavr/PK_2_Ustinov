@@ -5,12 +5,23 @@ function App() {
   const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
-    // Здесь вы можете сделать ваш фетч запрос
+    // Запрос для получения списка задач
     fetch('https://jsonplaceholder.typicode.com/todos')
       .then(response => response.json())
-      .then(data => {
-        // Устанавливаем полученные данные в состояние tasks
-        setTasks(data);
+      .then(tasksData => {
+        // Запрос для получения списка пользователей
+        fetch('https://jsonplaceholder.typicode.com/users')
+          .then(response => response.json())
+          .then(usersData => {
+            // Обработка данных и добавление информации о пользователе к каждой задаче
+            const tasksWithUsers = tasksData.map(task => {
+              const user = usersData.find(user => user.id === task.userId);
+              return { ...task, user: user };
+            });
+            // Устанавливаем полученные данные в состояние tasks
+            setTasks(tasksWithUsers);
+          })
+          .catch(error => console.error('Error fetching users:', error));
       })
       .catch(error => console.error('Error fetching tasks:', error));
   }, []);
@@ -117,7 +128,10 @@ function App() {
                     onChange={(e) => setEditTaskText(e.target.value)}
                   />
                 ) : (
-                  task.title
+                  <>
+                    {task.title}
+                    {task.user && <span>({task.user.name})</span>}
+                  </>
                 )}
               </label>
             </div>
